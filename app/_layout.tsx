@@ -16,6 +16,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack, router } from 'expo-router';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { queryClient } from '@/services/api/queryClient';
@@ -36,7 +37,13 @@ function RootNavigator() {
   }, [isHydrated, accessToken]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.midnight },
+        animation: 'fade',
+      }}
+    >
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
     </Stack>
@@ -74,7 +81,9 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.midnight }}>
         <SafeAreaProvider>
-          <RootNavigator />
+          <KeyboardProvider>
+            <RootNavigator />
+          </KeyboardProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>

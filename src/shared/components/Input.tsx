@@ -9,8 +9,8 @@ import {
 import { colors, fontFamilies, fontSizes, radius, spacing } from '@/theme';
 
 interface InputProps extends TextInputProps {
-  label?: string;
-  error?: string;
+  label?: string | undefined;
+  error?: string | undefined;
 }
 
 export const Input = forwardRef<TextInput, InputProps>(

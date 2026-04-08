@@ -1,13 +1,9 @@
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { mockDelay } from '@/shared/utils/mockDelay';
-
-const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
 
 export async function registerPushToken(): Promise<string | null> {
-  if (USE_MOCK) {
-    await mockDelay(300);
-    return 'mock-push-token-expo-xxxx';
-  }
+  // Expo Go (SDK 53+) no soporta push tokens remotos — solo funciona en dev/prod builds
+  if (Constants.appOwnership === 'expo') return null;
 
   // Import dinámico — evita que expo-notifications ejecute código al cargar el módulo
   const Notifications = await import('expo-notifications');

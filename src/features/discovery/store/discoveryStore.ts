@@ -3,9 +3,9 @@ import { devtools } from 'zustand/middleware';
 
 export interface DiscoveryProfile {
   id: string;
-  name: string;
+  displayName: string;
   age: number;
-  avatarUrl: string;
+  avatarUrl?: string | undefined;
   bio?: string | undefined;
   distance?: number | undefined;
 }

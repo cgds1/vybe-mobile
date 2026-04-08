@@ -15,3 +15,7 @@ export async function forgotPasswordApi(email: string): Promise<{ message: strin
   const { data } = await apiClient.post<{ message: string }>('/auth/forgot-password', { email });
   return data;
 }
+
+export async function logoutApi(): Promise<void> {
+  await apiClient.post('/auth/logout');
+}

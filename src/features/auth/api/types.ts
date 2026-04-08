@@ -14,10 +14,6 @@ export interface LoginInput {
 }
 
 export interface RegisterInput {
-  name: string;
   email: string;
   password: string;
-  dob: string; // DD/MM/YYYY
-  bio: string;
-  avatarUri?: string | undefined;
 }

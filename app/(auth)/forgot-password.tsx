@@ -1,4 +1,3 @@
-import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -12,7 +11,6 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { forgotPassword } from '@/features/auth/api';
 import { Button, Input } from '@/shared/components';
 import { colors, fontFamilies, fontSizes, spacing } from '@/theme';
 
@@ -20,10 +18,6 @@ export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string | undefined>();
-
-  const { mutate, isPending, isSuccess } = useMutation({
-    mutationFn: () => forgotPassword(email.trim()),
-  });
 
   const validate = (): boolean => {
     if (!email.trim()) {
@@ -38,10 +32,8 @@ export default function ForgotPasswordScreen() {
     return true;
   };
 
-  const handleSubmit = () => {
-    if (!validate()) return;
-    mutate();
-  };
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  const handleSubmit = () => {};
 
   return (
     <KeyboardAvoidingView
@@ -59,24 +51,7 @@ export default function ForgotPasswordScreen() {
           <View style={styles.content}>
             <Text style={styles.title}>Recuperar contraseña</Text>
 
-            {isSuccess ? (
-              <View style={styles.successBox}>
-                <View style={styles.successIconWrapper}>
-                  <Text style={styles.successIconText}>✓</Text>
-                </View>
-                <Text style={styles.successTitle}>¡Revisa tu email!</Text>
-                <Text style={styles.successMessage}>
-                  Si existe una cuenta con ese email, recibirás instrucciones para recuperar tu contraseña.
-                </Text>
-                <Button
-                  label="Volver al login"
-                  variant="secondary"
-                  onPress={() => router.back()}
-                  fullWidth
-                />
-              </View>
-            ) : (
-              <View style={styles.form}>
+            <View style={styles.form}>
                 <Text style={styles.subtitle}>
                   Ingresa tu email y te enviaremos las instrucciones para recuperar tu contraseña.
                 </Text>
@@ -99,11 +74,13 @@ export default function ForgotPasswordScreen() {
                 <Button
                   label="Enviar instrucciones"
                   onPress={handleSubmit}
-                  loading={isPending}
+                  disabled
                   fullWidth
                 />
+                <Text style={styles.comingSoon}>
+                  Próximamente — esta función no está disponible aún.
+                </Text>
               </View>
-            )}
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -158,34 +135,10 @@ const styles = StyleSheet.create({
     lineHeight: fontSizes.md * 1.5,
   },
 
-  successBox: {
-    alignItems: 'center',
-    gap: spacing[4],
-  },
-  successIconWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: `${colors.success}20`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  successIconText: {
-    fontSize: 32,
-    color: colors.success,
-    lineHeight: 40,
-  },
-  successTitle: {
-    fontFamily: fontFamilies.display.bold,
-    fontSize: fontSizes.xl,
-    color: colors.text.primary,
-    textAlign: 'center',
-  },
-  successMessage: {
+  comingSoon: {
     fontFamily: fontFamilies.body.regular,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.sm,
     color: colors.text.secondary,
     textAlign: 'center',
-    lineHeight: fontSizes.md * 1.5,
   },
 });

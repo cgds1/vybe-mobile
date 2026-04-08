@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { register } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { createProfileApi } from '@/features/users/api/users.api';
 import { registerPushToken } from '@/features/notifications/notifications';
 import { Button, Input } from '@/shared/components';
 import { colors, fontFamilies, fontSizes, radius, spacing } from '@/theme';
@@ -104,15 +105,29 @@ export default function RegisterScreen() {
   const { setTokens, setUser } = useAuthStore();
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: () =>
-      register({
-        name: form.name.trim(),
+    mutationFn: async () => {
+      const authData = await register({
         email: form.email.trim(),
         password: form.password,
-        dob: form.dob,
-        bio: form.bio.trim(),
-        avatarUri: form.avatarUri,
-      }),
+      });
+
+      // Calculate age from DD/MM/YYYY
+      const [dd, mm, yyyy] = form.dob.split('/').map(Number);
+      const today = new Date();
+      let age = today.getFullYear() - (yyyy ?? 0);
+      if (today < new Date(today.getFullYear(), (mm ?? 1) - 1, dd ?? 1)) age--;
+
+      await createProfileApi(
+        {
+          displayName: form.name.trim(),
+          age,
+          bio: form.bio.trim() || undefined,
+        },
+        authData.accessToken,
+      );
+
+      return authData;
+    },
     onSuccess: async (data) => {
       setTokens(data.accessToken, data.refreshToken);
       setUser(data.user);

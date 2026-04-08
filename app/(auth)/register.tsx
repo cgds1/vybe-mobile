@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { register } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { createProfileApi } from '@/features/users/api/users.api';
+import { createProfileApi, uploadAvatarApi } from '@/features/users/api/users.api';
 import { registerPushToken } from '@/features/notifications/notifications';
 import { Button, Input } from '@/shared/components';
 import { colors, fontFamilies, fontSizes, radius, spacing } from '@/theme';
@@ -125,6 +125,10 @@ export default function RegisterScreen() {
         },
         authData.accessToken,
       );
+
+      if (form.avatarUri !== undefined) {
+        await uploadAvatarApi(form.avatarUri, authData.accessToken);
+      }
 
       return authData;
     },

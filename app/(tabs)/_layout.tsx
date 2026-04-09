@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useChatStore } from '@/features/chat/store/chatStore';
 import { colors } from '@/theme';
 
 export default function TabsLayout() {
+  const unreadCount = useChatStore((s) => s.unreadCount);
+
   return (
     <Tabs
       screenOptions={{
@@ -31,6 +34,9 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles-outline" size={size} color={color} />
           ),
+          ...(unreadCount > 0
+            ? { tabBarBadge: unreadCount, tabBarBadgeStyle: { backgroundColor: colors.coral } }
+            : {}),
         }}
       />
     </Tabs>

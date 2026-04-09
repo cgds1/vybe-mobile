@@ -1,6 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { colors, fontFamilies, fontSizes, radius, spacing } from '@/theme';
 import type { Message } from '../store/chatStore';
+import { ImageViewer } from './ImageViewer';
 
 interface Props {
   message: Message;
@@ -15,18 +18,46 @@ function StatusIcon({ status }: { status: Message['status'] }) {
 }
 
 export function MessageBubble({ message, isOwn }: Props) {
+  const [viewerOpen, setViewerOpen] = useState(false);
+
+  const isImage = message.type === 'IMAGE';
+
   return (
     <View style={[styles.row, isOwn ? styles.rowOwn : styles.rowOther]}>
-      <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
-        <Text style={[styles.text, isOwn ? styles.textOwn : styles.textOther]}>
-          {message.content}
-        </Text>
-        {isOwn && (
-          <View style={styles.statusRow}>
-            <StatusIcon status={message.status} />
-          </View>
+      <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther, isImage && styles.bubbleImage]}>
+        {isImage ? (
+          <>
+            <Pressable onPress={() => setViewerOpen(true)}>
+              <Image
+                source={{ uri: message.content }}
+                style={styles.image}
+                contentFit="cover"
+                transition={200}
+              />
+            </Pressable>
+            {isOwn && (
+              <View style={styles.statusRow}>
+                <StatusIcon status={message.status} />
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            <Text style={[styles.text, isOwn ? styles.textOwn : styles.textOther]}>
+              {message.content}
+            </Text>
+            {isOwn && (
+              <View style={styles.statusRow}>
+                <StatusIcon status={message.status} />
+              </View>
+            )}
+          </>
         )}
       </View>
+
+      {viewerOpen && (
+        <ImageViewer uri={message.content} onClose={() => setViewerOpen(false)} />
+      )}
     </View>
   );
 }
@@ -48,6 +79,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[2],
     borderRadius: radius.lg,
   },
+  bubbleImage: {
+    padding: 0,
+    overflow: 'hidden',
+  },
   bubbleOwn: {
     backgroundColor: colors.coral,
     borderBottomRightRadius: radius.sm,
@@ -67,9 +102,16 @@ const styles = StyleSheet.create({
   textOther: {
     color: colors.text.primary,
   },
+  image: {
+    width: 200,
+    height: 200,
+    borderRadius: radius.lg,
+  },
   statusRow: {
     alignItems: 'flex-end',
     marginTop: 2,
+    paddingHorizontal: spacing[2],
+    paddingBottom: spacing[1],
   },
   statusIcon: {
     fontSize: 10,

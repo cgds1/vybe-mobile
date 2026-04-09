@@ -5,9 +5,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { getMessages } from '@/features/chat/api/chat.api';
+import { getMessages, uploadChatImage } from '@/features/chat/api/chat.api';
 import { ChatInput } from '@/features/chat/components/ChatInput';
 import { MessageBubble } from '@/features/chat/components/MessageBubble';
+import { TypingIndicator } from '@/features/chat/components/TypingIndicator';
 import { getChatSocket } from '@/features/chat/socket/chatSocket';
 import { useChatStore } from '@/features/chat/store/chatStore';
 import type { Message } from '@/features/chat/store/chatStore';
@@ -36,7 +37,6 @@ export default function ChatScreen() {
   const isLoadingMoreRef = useRef(false);
   const tempIdCounterRef = useRef(0);
 
-  // Carga inicial de mensajes
   const loadInitial = useCallback(async () => {
     try {
       const res = await getMessages(chatId);
@@ -44,11 +44,10 @@ export default function ChatScreen() {
       const mapped: Message[] = res.data.map((m) => ({ ...m, status: 'sent' as const }));
       setMessages(chatId, mapped);
     } catch {
-      // silencioso — el usuario ve lista vacía
+      // silencioso
     }
   }, [chatId, setMessages]);
 
-  // Carga más mensajes (paginación hacia atrás)
   const loadMore = useCallback(async () => {
     if (!nextCursorRef.current || isLoadingMoreRef.current) return;
     isLoadingMoreRef.current = true;
@@ -56,7 +55,6 @@ export default function ChatScreen() {
       const res = await getMessages(chatId, nextCursorRef.current);
       nextCursorRef.current = res.nextCursor;
       const mapped: Message[] = res.data.map((m) => ({ ...m, status: 'sent' as const }));
-      // Los mensajes vienen desc → prependMessages los agrega al final de la lista (que es invertida)
       useChatStore.getState().prependMessages(chatId, mapped);
     } catch {
       // silencioso
@@ -65,16 +63,14 @@ export default function ChatScreen() {
     }
   }, [chatId]);
 
-  // Socket: conectar, unirse al room, escuchar eventos
   useEffect(() => {
     if (!accessToken) return;
 
     const socket = getChatSocket(accessToken);
-
     socket.emit('join_chat', { chatId });
 
     function onNewMessage(msg: Omit<Message, 'status'>) {
-      if (msg.senderId === user?.id) return; // los propios se manejan via confirmMessage
+      if (msg.senderId === user?.id) return;
       addMessage({ ...msg, status: 'sent' });
     }
 
@@ -105,7 +101,6 @@ export default function ChatScreen() {
   function handleSend(text: string) {
     if (!accessToken || !user) return;
 
-    // Generar ID temporal único
     const tempId = `temp_${Date.now()}_${tempIdCounterRef.current++}`;
 
     const optimistic: Message = {
@@ -121,10 +116,8 @@ export default function ChatScreen() {
     addMessage(optimistic);
 
     const socket = getChatSocket(accessToken);
-
     socket.emit('send_message', { chatId, content: text, type: 'TEXT' });
 
-    // Escuchar la confirmación del servidor (next new_message de este sender)
     function onConfirm(msg: Omit<Message, 'status'>) {
       if (msg.senderId !== user!.id) return;
       confirmMessage(chatId, tempId, { ...msg, status: 'sent' });
@@ -133,11 +126,31 @@ export default function ChatScreen() {
 
     socket.on('new_message', onConfirm);
 
-    // Timeout: si en 10s no llega confirmación, marcar como sent igual
     setTimeout(() => {
       socket.off('new_message', onConfirm);
       confirmMessage(chatId, tempId, { ...optimistic, status: 'sent' });
     }, 10000);
+  }
+
+  async function handleSendImage(uri: string) {
+    if (!user) return;
+
+    const tempId = `temp_img_${Date.now()}_${tempIdCounterRef.current++}`;
+
+    const optimistic: Message = {
+      id: tempId,
+      chatId,
+      senderId: user.id,
+      content: uri,
+      type: 'IMAGE',
+      status: 'sending',
+      createdAt: new Date().toISOString(),
+    };
+
+    addMessage(optimistic);
+
+    const confirmed = await uploadChatImage(chatId, uri);
+    confirmMessage(chatId, tempId, { ...confirmed, status: 'sent' });
   }
 
   function handleTypingStart() {
@@ -161,9 +174,6 @@ export default function ChatScreen() {
           <Text style={styles.headerName} numberOfLines={1}>
             {name}
           </Text>
-          {isOtherTyping && (
-            <Text style={styles.typingText}>escribiendo...</Text>
-          )}
         </View>
       </View>
 
@@ -179,6 +189,11 @@ export default function ChatScreen() {
           )}
           onStartReached={loadMore}
           onStartReachedThreshold={0.3}
+          ListFooterComponent={isOtherTyping ? (
+            <View style={styles.invertedItem}>
+              <TypingIndicator />
+            </View>
+          ) : null}
           contentContainerStyle={{ paddingVertical: spacing[2] }}
         />
       </View>
@@ -187,6 +202,7 @@ export default function ChatScreen() {
       <View style={{ paddingBottom: bottom }}>
         <ChatInput
           onSend={handleSend}
+          onSendImage={handleSendImage}
           onTypingStart={handleTypingStart}
           onTypingStop={handleTypingStop}
         />
@@ -220,12 +236,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.display.semiBold,
     fontSize: fontSizes.lg,
     color: colors.text.primary,
-  },
-  typingText: {
-    fontFamily: fontFamilies.body.regular,
-    fontSize: fontSizes.xs,
-    color: colors.text.secondary,
-    fontStyle: 'italic',
   },
   listContainer: {
     flex: 1,

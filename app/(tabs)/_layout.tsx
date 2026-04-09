@@ -10,7 +10,6 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.coral,
         tabBarInactiveTintColor: colors.text.secondary,
         tabBarStyle: {
-          display: 'none', // visible when phase 4+ adds more tabs
           backgroundColor: colors.midnight,
           borderTopColor: colors.border.default,
         },
@@ -22,6 +21,15 @@ export default function TabsLayout() {
           tabBarLabel: 'Descubrir',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="compass" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chats"
+        options={{
+          tabBarLabel: 'Mensajes',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles-outline" size={size} color={color} />
           ),
         }}
       />

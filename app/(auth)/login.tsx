@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -61,8 +62,15 @@ export default function LoginScreen() {
     mutate();
   };
 
-  const apiError =
-    error instanceof Error ? error.message : error != null ? 'Error al iniciar sesión' : undefined;
+  const apiError = (() => {
+    if (!error) return undefined;
+    if (isAxiosError(error)) {
+      const status = error.response?.status;
+      if (status === 401 || status === 403 || status === 404) return 'Credenciales inválidas';
+      if (status === 429) return 'Demasiados intentos. Esperá un momento';
+    }
+    return 'Error al iniciar sesión. Intenta de nuevo';
+  })();
 
   return (
     <KeyboardAvoidingView

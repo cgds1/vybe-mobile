@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getDiscovery, swipe } from '@/features/discovery/api/discovery.api';
 import { SwipeCard, SwipeCardRef, CARD_WIDTH, CARD_HEIGHT } from '@/features/discovery/components/SwipeCard';
 import { useDiscoveryStore } from '@/features/discovery/store/discoveryStore';
-import { useAuthStore } from '@/features/auth/store/authStore';
+import { openChat } from '@/features/chat/api/chat.api';
+import { useToast } from '@/shared/context/ToastContext';
 import type { SwipeAction } from '@/features/discovery/api/types';
 import { colors, fontFamilies, fontSizes, radius, shadows, spacing } from '@/theme';
 
 export default function DiscoveryScreen() {
   const { top, bottom } = useSafeAreaInsets();
-  const logout = useAuthStore((s) => s.logout);
+  const { showToast } = useToast();
   const { swipeQueue, currentIndex, setSwipeQueue, appendToQueue, incrementIndex } = useDiscoveryStore();
   const cardRef = useRef<SwipeCardRef>(null);
   const isLoadingRef = useRef(false);
@@ -51,13 +53,28 @@ export default function DiscoveryScreen() {
     async (action: SwipeAction) => {
       if (!currentProfile) return;
       const targetId = currentProfile.id;
+      const profileName = currentProfile.displayName;
       incrementIndex();
       if (currentIndex >= swipeQueue.length - 2) {
         loadProfiles();
       }
-      swipe(targetId, action).catch(() => {});
+      try {
+        const result = await swipe(targetId, action);
+        if (result.match) {
+          try {
+            const chatId = await openChat(result.match.id);
+            showToast(`¡Match con ${profileName}! 🎉`, 'success');
+            router.push({ pathname: '/chat/[chatId]', params: { chatId, name: profileName } });
+          } catch {
+            showToast(`¡Match con ${profileName}! Ve a Mensajes. 🎉`, 'success');
+            router.push('/(tabs)/chats');
+          }
+        }
+      } catch {
+        // silencioso — el swipe ya avanzó visualmente
+      }
     },
-    [currentProfile, currentIndex, swipeQueue.length, incrementIndex, loadProfiles],
+    [currentProfile, currentIndex, swipeQueue.length, incrementIndex, loadProfiles, showToast],
   );
 
   const handlePressPass = useCallback(() => {
@@ -71,9 +88,6 @@ export default function DiscoveryScreen() {
   const header = (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>Vybe</Text>
-      <Pressable onPress={logout} hitSlop={12}>
-        <Text style={styles.logoutText}>Salir</Text>
-      </Pressable>
     </View>
   );
 
@@ -311,10 +325,5 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xl,
     color: colors.text.primary,
     letterSpacing: 1,
-  },
-  logoutText: {
-    fontFamily: fontFamilies.body.medium,
-    fontSize: fontSizes.sm,
-    color: colors.text.secondary,
   },
 });

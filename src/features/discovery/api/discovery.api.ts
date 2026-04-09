@@ -23,9 +23,15 @@ export async function getDiscovery(): Promise<DiscoveryProfile[]> {
   }));
 }
 
+interface SwipeResponse {
+  swipe: { id: string; userId: string; targetId: string; action: SwipeAction };
+  match: { id: string; user1Id: string; user2Id: string } | null;
+}
+
 export async function swipe(
   targetId: string,
   action: SwipeAction,
-): Promise<void> {
-  await apiClient.post('/matches/swipe', { targetId, action });
+): Promise<SwipeResponse> {
+  const { data } = await apiClient.post<SwipeResponse>('/matches/swipe', { targetId, action });
+  return data;
 }

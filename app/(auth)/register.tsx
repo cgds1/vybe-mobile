@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
@@ -145,12 +146,18 @@ export default function RegisterScreen() {
   const set = (key: keyof FormState) => (value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  const validateEmail = (value: string): string | undefined => {
+    if (!value.trim()) return 'El email es requerido';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim())) return 'Email inválido';
+    return undefined;
+  };
+
   const validate = (): boolean => {
     const next: FormErrors = {};
     if (!form.name.trim()) next.name = 'El nombre es requerido';
-    if (!form.email.trim()) next.email = 'El email es requerido';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim()))
-      next.email = 'Email inválido';
+    else if (form.name.trim().length < 2) next.name = 'Mínimo 2 caracteres';
+    const emailErr = validateEmail(form.email);
+    if (emailErr !== undefined) next.email = emailErr;
     const pwdError = validatePassword(form.password);
     if (pwdError !== undefined) next.password = pwdError;
     const dobError = validateDob(form.dob);
@@ -177,12 +184,18 @@ export default function RegisterScreen() {
     }
   };
 
-  const apiError =
-    error instanceof Error
-      ? error.message
-      : error != null
-        ? 'Error al crear la cuenta'
-        : undefined;
+  const apiError = (() => {
+    if (!error) return undefined;
+    if (isAxiosError(error)) {
+      const status = error.response?.status;
+      const msg = error.response?.data?.message as string | undefined;
+      if (status === 409 || (typeof msg === 'string' && msg.toLowerCase().includes('email')))
+        return 'Este email ya está registrado';
+      if (status === 400) return 'Datos inválidos. Revisá el formulario';
+      if (status === 429) return 'Demasiados intentos. Esperá un momento';
+    }
+    return 'Error al crear la cuenta. Intenta de nuevo';
+  })();
 
   return (
     <KeyboardAvoidingView
@@ -238,6 +251,10 @@ export default function RegisterScreen() {
             label="Email"
             value={form.email}
             onChangeText={(v) => { set('email')(v); clearError('email'); }}
+            onBlur={() => {
+              const err = validateEmail(form.email);
+              if (err) setErrors((e) => ({ ...e, email: err }));
+            }}
             error={errors.email}
             placeholder="tu@email.com"
             keyboardType="email-address"

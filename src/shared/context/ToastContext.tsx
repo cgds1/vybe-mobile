@@ -48,7 +48,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       {toasts.map((t) => (
-        <Toast key={t.id} message={t.message} type={t.type} />
+        <Toast
+          key={t.id}
+          message={t.message}
+          type={t.type}
+          onDismiss={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+        />
       ))}
     </ToastContext.Provider>
   );

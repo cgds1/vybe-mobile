@@ -84,8 +84,8 @@ function RootNavigator() {
     >
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="chat" />
-      <Stack.Screen name="user" />
+      <Stack.Screen name="chat/[chatId]" />
+      <Stack.Screen name="user/settings" />
     </Stack>
   );
 }

@@ -1,43 +1,29 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { AnimatedTabBar } from '@/shared/components/AnimatedTabBar';
 import { useChatStore } from '@/features/chat/store/chatStore';
-import { colors } from '@/theme';
 
 export default function TabsLayout() {
   const unreadCount = useChatStore((s) => s.unreadCount);
 
   return (
     <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.coral,
-        tabBarInactiveTintColor: colors.text.secondary,
-        tabBarStyle: {
-          backgroundColor: colors.midnight,
-          borderTopColor: colors.border.default,
-        },
-      }}
+      tabBar={(props) => <AnimatedTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen
         name="index"
-        options={{
-          tabBarLabel: 'Descubrir',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass" size={size} color={color} />
-          ),
-        }}
+        options={{ tabBarLabel: 'Descubrir' }}
       />
       <Tabs.Screen
         name="chats"
         options={{
           tabBarLabel: 'Mensajes',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles-outline" size={size} color={color} />
-          ),
-          ...(unreadCount > 0
-            ? { tabBarBadge: unreadCount, tabBarBadgeStyle: { backgroundColor: colors.coral } }
-            : {}),
+          ...(unreadCount > 0 ? { tabBarBadge: unreadCount } : {}),
         }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{ tabBarLabel: 'Perfil' }}
       />
     </Tabs>
   );

@@ -1,5 +1,5 @@
 import { apiClient } from '@/services/api/client';
-import type { CreateProfileInput } from './types';
+import type { CreateProfileInput, UpdateProfileInput, MyProfile } from './types';
 
 export async function createProfileApi(
   input: CreateProfileInput,
@@ -8,6 +8,15 @@ export async function createProfileApi(
   await apiClient.post('/users/profile', input, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+}
+
+export async function getMyProfileApi(): Promise<MyProfile> {
+  const { data } = await apiClient.get<MyProfile>('/users/me');
+  return data;
+}
+
+export async function updateProfileApi(input: UpdateProfileInput): Promise<void> {
+  await apiClient.patch('/users/profile', input);
 }
 
 export async function uploadAvatarApi(uri: string, accessToken: string): Promise<void> {

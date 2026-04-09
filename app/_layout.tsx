@@ -20,12 +20,50 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { queryClient } from '@/services/api/queryClient';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { ToastProvider } from '@/shared/context/ToastContext';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { isHydrated, accessToken } = useAuthStore();
+
+  // Deep link desde push notifications
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    async function setup() {
+      // Solo en builds nativos (no Expo Go)
+      const Constants = await import('expo-constants');
+      if (Constants.default.appOwnership === 'expo') return;
+
+      const Notifications = await import('expo-notifications');
+
+      // Manejar tap en notificación cuando la app está en background/cerrada
+      const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data as Record<string, unknown>;
+        const type = data?.type as string | undefined;
+        const chatId = data?.chatId as string | undefined;
+        const userId = data?.userId as string | undefined;
+
+        if (type === 'chat' && chatId) {
+          router.push({
+            pathname: '/chat/[chatId]',
+            params: { chatId, name: (data?.name as string) ?? 'Chat' },
+          });
+        } else if (type === 'match' && userId) {
+          // Navega a chats cuando hay un nuevo match
+          router.push('/(tabs)/chats');
+        }
+      });
+
+      cleanup = () => sub.remove();
+    }
+
+    setup();
+    return () => cleanup?.();
+  }, []);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -47,6 +85,7 @@ function RootNavigator() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="chat" />
+      <Stack.Screen name="user" />
     </Stack>
   );
 }
@@ -79,14 +118,18 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.midnight }}>
-        <SafeAreaProvider>
-          <KeyboardProvider>
-            <RootNavigator />
-          </KeyboardProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.midnight }}>
+          <SafeAreaProvider>
+            <KeyboardProvider>
+              <ToastProvider>
+                <RootNavigator />
+              </ToastProvider>
+            </KeyboardProvider>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

@@ -18,7 +18,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { queryClient } from '@/services/api/queryClient';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
@@ -28,15 +28,20 @@ import { colors } from '@/theme';
 SplashScreen.preventAutoHideAsync();
 
 // Mostrar notificaciones FCM aunque la app esté en primer plano
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Solo en builds nativos — expo-notifications no soporta push en Expo Go desde SDK 53
+if (Constants.appOwnership !== 'expo') {
+  import('expo-notifications').then((Notifications) => {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  });
+}
 
 function RootNavigator() {
   const { isHydrated, accessToken, user } = useAuthStore();
@@ -47,8 +52,7 @@ function RootNavigator() {
 
     async function setup() {
       // Solo en builds nativos (no Expo Go)
-      const Constants = await import('expo-constants');
-      if (Constants.default.appOwnership === 'expo') return;
+      if (Constants.appOwnership === 'expo') return;
 
       const Notifications = await import('expo-notifications');
 

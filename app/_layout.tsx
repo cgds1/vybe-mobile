@@ -18,6 +18,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { queryClient } from '@/services/api/queryClient';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
@@ -26,8 +27,19 @@ import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
+// Mostrar notificaciones FCM aunque la app esté en primer plano
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
 function RootNavigator() {
-  const { isHydrated, accessToken } = useAuthStore();
+  const { isHydrated, accessToken, user } = useAuthStore();
 
   // Deep link desde push notifications
   useEffect(() => {
@@ -68,11 +80,16 @@ function RootNavigator() {
   useEffect(() => {
     if (!isHydrated) return;
     if (accessToken) {
-      router.replace('/(tabs)');
+      if (user?.isVerified === false) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        router.replace({ pathname: '/(auth)/verify-email' as any, params: { email: user.email } });
+      } else {
+        router.replace('/(tabs)');
+      }
     } else {
       router.replace('/(auth)/login');
     }
-  }, [isHydrated, accessToken]);
+  }, [isHydrated, accessToken, user?.isVerified]);
 
   return (
     <Stack

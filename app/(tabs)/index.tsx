@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getDiscovery, swipe } from '@/features/discovery/api/discovery.api';
@@ -135,7 +135,12 @@ export default function DiscoveryScreen() {
     return (
       <View style={[styles.screen, { paddingTop: top, paddingBottom: bottom }]}>
         {header}
-        <View style={styles.stateContainer}>
+        <ScrollView
+          contentContainerStyle={styles.stateContainer}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={loadProfiles} tintColor={colors.coral} />
+          }
+        >
           <View style={styles.stateRing}>
             <View style={styles.stateRingInner}>
               <Text style={styles.stateIcon}>✦</Text>
@@ -143,12 +148,12 @@ export default function DiscoveryScreen() {
           </View>
           <Text style={styles.stateTitle}>Ya los viste a todos</Text>
           <Text style={styles.stateSubtitle}>
-            Estás al día con los perfiles de tu zona.{'\n'}Vuelve pronto para descubrir gente nueva.
+            Estás al día con los perfiles de tu zona.{'\n'}Deslizá hacia abajo para actualizar.
           </Text>
           <Pressable style={styles.actionCallout} onPress={loadProfiles}>
             <Text style={styles.actionCalloutText}>Actualizar</Text>
           </Pressable>
-        </View>
+        </ScrollView>
       </View>
     );
   }

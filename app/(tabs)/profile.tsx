@@ -14,7 +14,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { getMyProfileApi, updateProfileApi, uploadAvatarApi } from '@/features/users/api/users.api';
+import { createProfileApi, getMyProfileApi, updateProfileApi, uploadAvatarApi } from '@/features/users/api/users.api';
 import type { MyProfile } from '@/features/users/api/types';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { Skeleton } from '@/shared/components/Skeleton';
@@ -37,6 +37,8 @@ export default function ProfileScreen() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [bio, setBio] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [age, setAge] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -46,6 +48,8 @@ export default function ProfileScreen() {
       const data = await getMyProfileApi();
       setProfile(data);
       setBio(data.profile?.bio ?? '');
+      setDisplayName(data.profile?.displayName ?? user?.name ?? '');
+      setAge(data.profile?.age ? String(data.profile.age) : '');
       setInterests(data.profile?.interests ?? []);
     } catch {
       showToast('Error al cargar el perfil', 'error');
@@ -62,7 +66,25 @@ export default function ProfileScreen() {
     if (!isDirty) return;
     setIsSaving(true);
     try {
-      await updateProfileApi({ bio, interests });
+      if (profile?.profile === null) {
+        // Perfil no existe — hay que crearlo primero
+        const parsedAge = parseInt(age, 10);
+        if (!displayName.trim() || displayName.trim().length < 2) {
+          showToast('El nombre debe tener al menos 2 caracteres', 'error');
+          return;
+        }
+        if (isNaN(parsedAge) || parsedAge < 18 || parsedAge > 100) {
+          showToast('Ingresá una edad válida (18-100)', 'error');
+          return;
+        }
+        await createProfileApi(
+          { displayName: displayName.trim(), age: parsedAge, bio, interests },
+          accessToken ?? '',
+        );
+        await load();
+      } else {
+        await updateProfileApi({ displayName: displayName.trim() || undefined, bio, interests });
+      }
       setIsDirty(false);
       showToast('Perfil actualizado', 'success');
     } catch {
@@ -114,7 +136,6 @@ export default function ProfileScreen() {
     setIsDirty(true);
   }
 
-  const displayName = profile?.profile?.displayName ?? user?.name ?? '';
   const avatarUrl = user?.avatarUrl ?? profile?.profile?.avatarUrl ?? null;
 
   return (
@@ -160,6 +181,44 @@ export default function ProfileScreen() {
             <Text style={styles.displayName}>{displayName}</Text>
             <Text style={styles.email}>{profile?.email ?? ''}</Text>
           </View>
+
+          {/* Banner si no tiene perfil */}
+          {profile?.profile === null && (
+            <View style={styles.warningBanner}>
+              <Text style={styles.warningText}>
+                Completá tu perfil para continuar
+              </Text>
+            </View>
+          )}
+
+          {/* Nombre */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Nombre</Text>
+            <TextInput
+              style={styles.textInput}
+              value={displayName}
+              onChangeText={(v) => { setDisplayName(v); setIsDirty(true); }}
+              placeholder="Tu nombre..."
+              placeholderTextColor={colors.text.disabled}
+              maxLength={50}
+            />
+          </View>
+
+          {/* Edad — solo si no tiene perfil todavía */}
+          {profile?.profile === null && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>Edad</Text>
+              <TextInput
+                style={styles.textInput}
+                value={age}
+                onChangeText={(v) => { setAge(v.replace(/\D/g, '')); setIsDirty(true); }}
+                placeholder="Tu edad..."
+                placeholderTextColor={colors.text.disabled}
+                keyboardType="number-pad"
+                maxLength={3}
+              />
+            </View>
+          )}
 
           {/* Bio */}
           <View style={styles.section}>
@@ -299,6 +358,28 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
+  },
+  warningBanner: {
+    backgroundColor: `${colors.coral}18`,
+    borderWidth: 1,
+    borderColor: `${colors.coral}40`,
+    borderRadius: radius.md,
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
+  },
+  warningText: {
+    fontFamily: fontFamilies.body.medium,
+    fontSize: fontSizes.sm,
+    color: colors.coral,
+    textAlign: 'center',
+  },
+  textInput: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing[4],
+    fontFamily: fontFamilies.body.regular,
+    fontSize: fontSizes.md,
+    color: colors.text.primary,
   },
   bioInput: {
     backgroundColor: colors.surface,

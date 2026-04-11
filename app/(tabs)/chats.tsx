@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getChats } from '@/features/chat/api/chat.api';
+import { getChatSocket } from '@/features/chat/socket/chatSocket';
 import type { Chat } from '@/features/chat/api/types';
 import { useChatStore } from '@/features/chat/store/chatStore';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { colors, fontFamilies, fontSizes, radius, spacing } from '@/theme';
 
 function formatTime(iso?: string): string {
@@ -23,6 +25,12 @@ function formatTime(iso?: string): string {
     return date.toLocaleDateString('es', { weekday: 'short' });
   }
   return date.toLocaleDateString('es', { day: '2-digit', month: '2-digit' });
+}
+
+function formatPreview(msg: string | null | undefined): string {
+  if (!msg) return 'Inicia la conversación';
+  if (msg.startsWith('http') && msg.includes('cloudinary')) return '📷 Imagen';
+  return msg;
 }
 
 function ChatItem({ chat }: { chat: Chat }) {
@@ -53,7 +61,7 @@ function ChatItem({ chat }: { chat: Chat }) {
         </View>
         <View style={styles.itemRow}>
           <Text style={styles.preview} numberOfLines={1}>
-            {chat.lastMessage ?? 'Inicia la conversación'}
+            {formatPreview(chat.lastMessage)}
           </Text>
           {chat.unreadCount > 0 && (
             <View style={styles.badge}>
@@ -70,7 +78,8 @@ function ChatItem({ chat }: { chat: Chat }) {
 
 export default function ChatsScreen() {
   const { top } = useSafeAreaInsets();
-  const { activeChats, setChats } = useChatStore();
+  const { activeChats, setChats, updateChatLastMessage } = useChatStore();
+  const accessToken = useAuthStore((s) => s.accessToken);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -90,6 +99,36 @@ export default function ChatsScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Conectar socket y escuchar mensajes nuevos para actualizar la lista en tiempo real
+  useEffect(() => {
+    if (!accessToken) return;
+    const socket = getChatSocket(accessToken);
+
+    function onChatUpdated(data: { chatId: string; lastMessage: string; lastMessageAt: string }) {
+      updateChatLastMessage(data.chatId, data.lastMessage, data.lastMessageAt);
+    }
+
+    // Nuevo match → recargar lista para que aparezca el chat
+    function onNewMatch() {
+      load();
+    }
+
+    // Recargar lista completa al reconectar (por si llegaron mensajes offline)
+    function onReconnect() {
+      load();
+    }
+
+    socket.on('chat_updated', onChatUpdated);
+    socket.on('new_match', onNewMatch);
+    socket.on('connect', onReconnect);
+
+    return () => {
+      socket.off('chat_updated', onChatUpdated);
+      socket.off('new_match', onNewMatch);
+      socket.off('connect', onReconnect);
+    };
+  }, [accessToken, updateChatLastMessage, load]);
 
   return (
     <View style={[styles.screen, { paddingTop: top }]}>
@@ -124,6 +163,8 @@ export default function ChatsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <ChatItem chat={item} />}
           contentContainerStyle={styles.listContent}
+          onRefresh={load}
+          refreshing={isLoading}
         />
       )}
     </View>

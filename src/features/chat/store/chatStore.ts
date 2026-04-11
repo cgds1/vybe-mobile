@@ -19,6 +19,7 @@ interface ChatState {
   // Confirma: reemplaza el mensaje temporal por el real del servidor
   confirmMessage: (chatId: string, tempId: string, confirmed: Message) => void;
 
+  updateChatLastMessage: (chatId: string, lastMessage: string, lastMessageAt: string) => void;
   setTyping: (chatId: string, userId: string, isTyping: boolean) => void;
   markRead: (chatId: string) => void;
   incrementUnread: () => void;
@@ -64,6 +65,18 @@ export const useChatStore = create<ChatState>()((set) => ({
           m.id === tempId ? confirmed : m,
         ),
       },
+    })),
+
+  updateChatLastMessage: (chatId, lastMessage, lastMessageAt) =>
+    set((s) => ({
+      activeChats: s.activeChats
+        .map((c) =>
+          c.id === chatId
+            ? { ...c, lastMessage, lastMessageAt, unreadCount: c.unreadCount + 1 }
+            : c,
+        )
+        .sort((a, b) => new Date(b.lastMessageAt ?? 0).getTime() - new Date(a.lastMessageAt ?? 0).getTime()),
+      unreadCount: s.unreadCount + 1,
     })),
 
   setTyping: (chatId, userId, isTyping) =>

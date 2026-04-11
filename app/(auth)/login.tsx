@@ -45,6 +45,12 @@ export default function LoginScreen() {
       setUser(data.user);
       await registerPushToken();
     },
+    onError: (err) => {
+      if (isAxiosError(err) && err.response?.status === 403) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        router.push({ pathname: '/(auth)/verify-email' as any, params: { email: email.trim() } });
+      }
+    },
   });
 
   const validate = (): boolean => {
@@ -66,7 +72,8 @@ export default function LoginScreen() {
     if (!error) return undefined;
     if (isAxiosError(error)) {
       const status = error.response?.status;
-      if (status === 401 || status === 403 || status === 404) return 'Credenciales inválidas';
+      if (status === 403) return undefined; // manejado en onError con redirect
+      if (status === 401 || status === 404) return 'Email o contraseña incorrectos';
       if (status === 429) return 'Demasiados intentos. Esperá un momento';
     }
     return 'Error al iniciar sesión. Intenta de nuevo';

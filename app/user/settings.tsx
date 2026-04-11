@@ -14,19 +14,15 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   function handleLogout() {
-    // Desconectar socket
     disconnectChatSocket();
-
-    // Limpiar store de chat
     useChatStore.setState({
       activeChats: [],
       messages: {},
       typingUsers: {},
       unreadCount: 0,
     });
-
-    // Limpiar auth (navega a login automáticamente via RootNavigator)
     logout();
+    router.replace('/(auth)/login');
   }
 
   return (

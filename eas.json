@@ -1,0 +1,35 @@
+{
+  "cli": {
+    "version": ">= 18.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://vybe-backend-production-504d.up.railway.app",
+        "EXPO_PUBLIC_WS_URL": "https://vybe-backend-production-504d.up.railway.app"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://vybe-backend-production-504d.up.railway.app",
+        "EXPO_PUBLIC_WS_URL": "https://vybe-backend-production-504d.up.railway.app"
+      }
+    }
+  }
+}

@@ -137,6 +137,8 @@ export default function RegisterScreen() {
       setTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
       await registerPushToken();
+      // Si isVerified=false el RootNavigator redirige a verify-email automáticamente
+      // via el efecto en _layout.tsx que chequea user.isVerified
     },
   });
 
@@ -188,11 +190,39 @@ export default function RegisterScreen() {
     if (!error) return undefined;
     if (isAxiosError(error)) {
       const status = error.response?.status;
-      const msg = error.response?.data?.message as string | undefined;
-      if (status === 409 || (typeof msg === 'string' && msg.toLowerCase().includes('email')))
+      const raw = error.response?.data?.message;
+      const msgs: string[] = Array.isArray(raw) ? raw : typeof raw === 'string' ? [raw] : [];
+
+      if (status === 409 || msgs.some((m) => m.toLowerCase().includes('email already')))
         return 'Este email ya está registrado';
-      if (status === 400) return 'Datos inválidos. Revisá el formulario';
       if (status === 429) return 'Demasiados intentos. Esperá un momento';
+
+      if (status === 400 && msgs.length > 0) {
+        // Mapear mensajes del backend a español
+        const mapped = msgs.map((m) => {
+          if (m.includes('displayName') || m.includes('display')) {
+            if (m.includes('longer') || m.includes('min')) return 'Nombre: mínimo 2 caracteres';
+            if (m.includes('shorter') || m.includes('max')) return 'Nombre: máximo 50 caracteres';
+            return 'Nombre inválido';
+          }
+          if (m.includes('age')) {
+            if (m.includes('min') || m.includes('less')) return 'Edad: mínimo 18 años';
+            if (m.includes('max') || m.includes('greater')) return 'Edad: máximo 100 años';
+            if (m.includes('integer') || m.includes('number')) return 'Edad debe ser un número';
+            return 'Edad inválida';
+          }
+          if (m.includes('password')) {
+            if (m.includes('6') || m.includes('8') || m.includes('length')) return 'Contraseña muy corta';
+            if (m.includes('uppercase')) return 'Contraseña: falta mayúscula';
+            if (m.includes('lowercase')) return 'Contraseña: falta minúscula';
+            if (m.includes('number') || m.includes('digit')) return 'Contraseña: falta un número';
+            return 'Contraseña inválida';
+          }
+          if (m.includes('bio') && (m.includes('max') || m.includes('shorter'))) return 'Bio: máximo 500 caracteres';
+          return m;
+        });
+        return mapped.join(' · ');
+      }
     }
     return 'Error al crear la cuenta. Intenta de nuevo';
   })();

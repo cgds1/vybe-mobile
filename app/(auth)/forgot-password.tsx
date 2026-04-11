@@ -1,3 +1,5 @@
+import { isAxiosError } from 'axios';
+import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -11,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { forgotPassword } from '@/features/auth/api';
 import { Button, Input } from '@/shared/components';
 import { colors, fontFamilies, fontSizes, spacing } from '@/theme';
 
@@ -18,6 +21,21 @@ export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string | undefined>();
+
+  const { mutate, isPending, isSuccess } = useMutation({
+    mutationFn: () => forgotPassword(email.trim()),
+    onSuccess: () => {
+      // El backend responde igual si el email existe o no (anti-enumeración)
+      // Navegar a reset-password con el email para que el usuario ingrese el código
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push({ pathname: '/(auth)/reset-password' as any, params: { email: email.trim() } });
+    },
+    onError: (err) => {
+      if (isAxiosError(err) && err.response?.status === 429) {
+        setEmailError('Demasiados intentos. Esperá un momento');
+      }
+    },
+  });
 
   const validate = (): boolean => {
     if (!email.trim()) {
@@ -32,8 +50,10 @@ export default function ForgotPasswordScreen() {
     return true;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const handleSubmit = () => {};
+  const handleSubmit = () => {
+    if (!validate()) return;
+    mutate();
+  };
 
   return (
     <KeyboardAvoidingView
@@ -42,45 +62,40 @@ export default function ForgotPasswordScreen() {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={[styles.outer, { paddingTop: insets.top + spacing[4] }]}>
-          {/* Back button — anclado al top */}
           <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={16}>
             <View style={styles.chevron} />
           </Pressable>
 
-          {/* Contenido centrado verticalmente en el espacio restante */}
           <View style={styles.content}>
             <Text style={styles.title}>Recuperar contraseña</Text>
 
             <View style={styles.form}>
-                <Text style={styles.subtitle}>
-                  Ingresa tu email y te enviaremos las instrucciones para recuperar tu contraseña.
-                </Text>
-                <Input
-                  label="Email"
-                  value={email}
-                  onChangeText={(t) => {
-                    setEmail(t);
-                    if (emailError) setEmailError(undefined);
-                  }}
-                  error={emailError}
-                  placeholder="tu@email.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  maxLength={254}
-                  returnKeyType="done"
-                  onSubmitEditing={handleSubmit}
-                />
-                <Button
-                  label="Enviar instrucciones"
-                  onPress={handleSubmit}
-                  disabled
-                  fullWidth
-                />
-                <Text style={styles.comingSoon}>
-                  Próximamente — esta función no está disponible aún.
-                </Text>
-              </View>
+              <Text style={styles.subtitle}>
+                Ingresá tu email y te enviaremos un código para crear una nueva contraseña.
+              </Text>
+              <Input
+                label="Email"
+                value={email}
+                onChangeText={(t) => {
+                  setEmail(t);
+                  if (emailError) setEmailError(undefined);
+                }}
+                error={emailError}
+                placeholder="tu@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={254}
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
+              />
+              <Button
+                label="Enviar código"
+                onPress={handleSubmit}
+                loading={isPending}
+                fullWidth
+              />
+            </View>
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -112,7 +127,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // Ocupa todo el espacio restante y centra verticalmente
   content: {
     flex: 1,
     justifyContent: 'center',
@@ -133,12 +147,5 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.text.secondary,
     lineHeight: fontSizes.md * 1.5,
-  },
-
-  comingSoon: {
-    fontFamily: fontFamilies.body.regular,
-    fontSize: fontSizes.sm,
-    color: colors.text.secondary,
-    textAlign: 'center',
   },
 });

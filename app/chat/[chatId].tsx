@@ -26,7 +26,7 @@ export default function ChatScreen() {
   const { bottom } = useSafeAreaInsets();
 
   const { accessToken, user } = useAuthStore();
-  const { messages, setMessages, addMessage, confirmMessage, setTyping, typingUsers } =
+  const { messages, setMessages, addMessage, confirmMessage, setTyping, typingUsers, markRead } =
     useChatStore();
 
   const chatMessages = messages[chatId] ?? [];
@@ -96,7 +96,8 @@ export default function ChatScreen() {
 
   useEffect(() => {
     loadInitial();
-  }, [loadInitial]);
+    markRead(chatId);
+  }, [loadInitial, markRead, chatId]);
 
   function handleSend(text: string) {
     if (!accessToken || !user) return;

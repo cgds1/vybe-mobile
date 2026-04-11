@@ -2,6 +2,7 @@ export interface CreateProfileInput {
   displayName: string;
   age: number;
   bio?: string | undefined;
+  interests?: string[] | undefined;
 }
 
 export interface UpdateProfileInput {

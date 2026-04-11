@@ -7,6 +7,7 @@ export interface AuthUser {
   name: string;
   email: string;
   avatarUrl?: string | undefined;
+  isVerified?: boolean | undefined;
 }
 
 interface AuthState {

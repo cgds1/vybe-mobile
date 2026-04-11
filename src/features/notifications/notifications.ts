@@ -1,11 +1,11 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { apiClient } from '@/services/api/client';
 
 export async function registerPushToken(): Promise<string | null> {
-  // Expo Go (SDK 53+) no soporta push tokens remotos — solo funciona en dev/prod builds
+  // Expo Go no soporta push tokens nativos — solo funciona en builds nativos
   if (Constants.appOwnership === 'expo') return null;
 
-  // Import dinámico — evita que expo-notifications ejecute código al cargar el módulo
   const Notifications = await import('expo-notifications');
 
   if (Platform.OS === 'android') {
@@ -23,10 +23,18 @@ export async function registerPushToken(): Promise<string | null> {
     finalStatus = status;
   }
 
-  if (finalStatus !== 'granted') {
-    return null;
+  if (finalStatus !== 'granted') return null;
+
+  // El backend usa Firebase Admin SDK — necesita el token FCM nativo, no el Expo push token
+  const { data: token } = await Notifications.getDevicePushTokenAsync();
+  if (!token) return null;
+
+  // Registrar el token en el backend
+  try {
+    await apiClient.post('/notifications/token', { token });
+  } catch {
+    // No crítico — la app funciona igual sin notificaciones
   }
 
-  const token = await Notifications.getExpoPushTokenAsync();
-  return token.data;
+  return token;
 }

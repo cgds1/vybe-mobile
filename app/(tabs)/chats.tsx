@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Image } from 'expo-image';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
@@ -48,9 +49,18 @@ function ChatItem({ chat }: { chat: Chat }) {
   return (
     <Pressable style={styles.item} onPress={handlePress}>
       <View style={styles.avatar}>
-        <Text style={styles.avatarInitial}>
-          {chat.participantName.charAt(0).toUpperCase()}
-        </Text>
+        {chat.participantAvatar ? (
+          <Image
+            source={{ uri: chat.participantAvatar }}
+            style={styles.avatarImage}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : (
+          <Text style={styles.avatarInitial}>
+            {chat.participantName.charAt(0).toUpperCase()}
+          </Text>
+        )}
       </View>
       <View style={styles.itemContent}>
         <View style={styles.itemRow}>
@@ -203,6 +213,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+  },
+  avatarImage: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
   },
   avatarInitial: {
     fontFamily: fontFamilies.display.semiBold,

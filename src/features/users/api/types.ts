@@ -22,3 +22,13 @@ export interface MyProfile {
     avatarUrl?: string | null;
   } | null;
 }
+
+export interface PublicProfile {
+  id: string;
+  userId: string;
+  displayName: string;
+  age: number;
+  bio?: string | null;
+  interests: string[];
+  avatarUrl?: string | null;
+}

@@ -19,6 +19,7 @@ import type { MyProfile } from '@/features/users/api/types';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { Skeleton } from '@/shared/components/Skeleton';
 import { useToast } from '@/shared/context/ToastContext';
+import { Background } from '@/shared/components/Background';
 import { colors, fontFamilies, fontSizes, radius, spacing } from '@/theme';
 
 const INTEREST_PRESETS = [
@@ -276,7 +277,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.midnight,
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',

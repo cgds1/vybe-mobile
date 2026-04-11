@@ -1,5 +1,5 @@
 import { apiClient } from '@/services/api/client';
-import type { CreateProfileInput, UpdateProfileInput, MyProfile } from './types';
+import type { CreateProfileInput, UpdateProfileInput, MyProfile, PublicProfile } from './types';
 
 export async function createProfileApi(
   input: CreateProfileInput,
@@ -17,6 +17,11 @@ export async function getMyProfileApi(): Promise<MyProfile> {
 
 export async function updateProfileApi(input: UpdateProfileInput): Promise<void> {
   await apiClient.patch('/users/profile', input);
+}
+
+export async function getUserProfileApi(userId: string): Promise<PublicProfile> {
+  const { data } = await apiClient.get<PublicProfile>(`/users/${userId}`);
+  return data;
 }
 
 export async function uploadAvatarApi(uri: string, accessToken: string): Promise<void> {

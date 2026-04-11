@@ -13,16 +13,18 @@ import { getChatSocket } from '@/features/chat/socket/chatSocket';
 import { useChatStore } from '@/features/chat/store/chatStore';
 import type { Message } from '@/features/chat/store/chatStore';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { Background } from '@/shared/components/Background';
 import { colors, fontFamilies, fontSizes, spacing } from '@/theme';
 
 type Params = {
   chatId: string;
   name: string;
   avatar?: string;
+  participantId?: string;
 };
 
 export default function ChatScreen() {
-  const { chatId, name } = useLocalSearchParams<Params>();
+  const { chatId, name, participantId } = useLocalSearchParams<Params>();
   const { bottom } = useSafeAreaInsets();
 
   const { accessToken, user } = useAuthStore();
@@ -171,11 +173,22 @@ export default function ChatScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
         </Pressable>
-        <View style={styles.headerInfo}>
+        <Pressable
+          style={styles.headerInfo}
+          onPress={() => {
+            if (participantId) {
+              router.push({
+                pathname: '/user/[userId]',
+                params: { userId: participantId, name },
+              });
+            }
+          }}
+          disabled={!participantId}
+        >
           <Text style={styles.headerName} numberOfLines={1}>
             {name}
           </Text>
-        </View>
+        </Pressable>
       </View>
 
       {/* Mensajes — FlashList v2 no tiene `inverted`, usamos scaleY(-1) */}
@@ -215,7 +228,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.midnight,
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',

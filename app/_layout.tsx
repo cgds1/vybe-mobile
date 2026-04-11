@@ -12,9 +12,12 @@ import {
   SpaceGrotesk_700Bold,
   useFonts as useSpaceGroteskFonts,
 } from '@expo-google-fonts/space-grotesk';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack, router } from 'expo-router';
 import { useEffect } from 'react';
+import { ImageBackground, StyleSheet, View } from 'react-native';
+
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -24,6 +27,17 @@ import { queryClient } from '@/services/api/queryClient';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { ToastProvider } from '@/shared/context/ToastContext';
 import { colors } from '@/theme';
+
+const bgImage = require('../assets/bg.jpg');
+
+const AppTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: 'transparent',
+    card: 'transparent',
+  },
+};
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,24 +71,46 @@ function RootNavigator() {
       const Notifications = await import('expo-notifications');
 
       // Manejar tap en notificación cuando la app está en background/cerrada
-      const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const bgSub = Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data as Record<string, unknown>;
         const type = data?.type as string | undefined;
         const chatId = data?.chatId as string | undefined;
         const userId = data?.userId as string | undefined;
 
-        if (type === 'chat' && chatId) {
+        if (type === 'new_message' && chatId) {
+          router.push({
+            pathname: '/chat/[chatId]',
+            params: { chatId, name: (data?.name as string) ?? 'Chat' },
+          });
+        } else if (type === 'chat' && chatId) {
           router.push({
             pathname: '/chat/[chatId]',
             params: { chatId, name: (data?.name as string) ?? 'Chat' },
           });
         } else if (type === 'match' && userId) {
-          // Navega a chats cuando hay un nuevo match
           router.push('/(tabs)/chats');
         }
       });
 
-      cleanup = () => sub.remove();
+      // Manejar notificación cuando la app está en foreground
+      const fgSub = Notifications.addNotificationReceivedListener((notification) => {
+        const data = notification.request.content.data as Record<string, unknown>;
+        const type = data?.type as string | undefined;
+        const chatId = data?.chatId as string | undefined;
+        const name = (data?.name as string) ?? 'Chat';
+
+        if (type === 'new_message' && chatId) {
+          router.push({
+            pathname: '/chat/[chatId]',
+            params: { chatId, name },
+          });
+        }
+      });
+
+      cleanup = () => {
+        bgSub.remove();
+        fgSub.remove();
+      };
     }
 
     setup();
@@ -99,7 +135,7 @@ function RootNavigator() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colors.midnight },
+        contentStyle: { backgroundColor: 'transparent' },
         animation: 'fade',
       }}
     >
@@ -107,6 +143,7 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="chat/[chatId]" />
       <Stack.Screen name="user/settings" />
+      <Stack.Screen name="user/[userId]" />
     </Stack>
   );
 }
@@ -141,16 +178,30 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.midnight }}>
-          <SafeAreaProvider>
-            <KeyboardProvider>
-              <ToastProvider>
-                <RootNavigator />
-              </ToastProvider>
-            </KeyboardProvider>
-          </SafeAreaProvider>
+        <GestureHandlerRootView style={styles.root}>
+          <ImageBackground source={bgImage} style={styles.root} resizeMode="cover">
+            <View style={styles.overlay}>
+              <ThemeProvider value={AppTheme}>
+                <SafeAreaProvider>
+                  <KeyboardProvider>
+                    <ToastProvider>
+                      <RootNavigator />
+                    </ToastProvider>
+                  </KeyboardProvider>
+                </SafeAreaProvider>
+              </ThemeProvider>
+            </View>
+          </ImageBackground>
         </GestureHandlerRootView>
       </QueryClientProvider>
     </ErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(14, 22, 40, 0.80)',
+  },
+});

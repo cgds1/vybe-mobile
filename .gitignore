@@ -41,6 +41,12 @@ yarn-error.*
 
 # Claude internal — never commit
 claude/
+CLAUDE.md
+
+# Tests (local only for now)
+jest.setup.ts
+**/*.test.ts
+**/*.test.tsx
 
 # typescript
 *.tsbuildinfo

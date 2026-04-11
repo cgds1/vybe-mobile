@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useChatStore } from '@/features/chat/store/chatStore';
 import { disconnectChatSocket } from '@/features/chat/socket/chatSocket';
+import { Background } from '@/shared/components/Background';
 import { colors, fontFamilies, fontSizes, radius, spacing } from '@/theme';
 
 export default function SettingsScreen() {
@@ -75,7 +76,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.midnight,
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',

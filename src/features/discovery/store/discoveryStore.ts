@@ -7,6 +7,7 @@ export interface DiscoveryProfile {
   age: number;
   avatarUrl?: string | undefined;
   bio?: string | undefined;
+  interests?: string[] | undefined;
   distance?: number | undefined;
 }
 

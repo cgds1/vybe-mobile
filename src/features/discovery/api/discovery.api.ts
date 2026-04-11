@@ -19,6 +19,7 @@ export async function getDiscovery(): Promise<DiscoveryProfile[]> {
     displayName: profile.displayName,
     age: profile.age,
     bio: profile.bio,
+    interests: profile.interests.length > 0 ? profile.interests : undefined,
     avatarUrl: profile.avatarUrl ?? undefined,
   }));
 }

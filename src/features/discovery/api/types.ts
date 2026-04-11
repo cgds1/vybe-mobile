@@ -4,6 +4,7 @@ export interface DiscoveryProfile {
   avatarUrl?: string | undefined;
   age: number;
   bio?: string | undefined;
+  interests?: string[] | undefined;
   distance?: number | undefined;
 }
 

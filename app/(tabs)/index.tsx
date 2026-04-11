@@ -8,6 +8,7 @@ import { useDiscoveryStore } from '@/features/discovery/store/discoveryStore';
 import { openChat } from '@/features/chat/api/chat.api';
 import { useToast } from '@/shared/context/ToastContext';
 import type { SwipeAction } from '@/features/discovery/api/types';
+import { Background } from '@/shared/components/Background';
 import { colors, fontFamilies, fontSizes, radius, shadows, spacing } from '@/theme';
 
 export default function DiscoveryScreen() {
@@ -204,7 +205,7 @@ export default function DiscoveryScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.midnight,
+    backgroundColor: 'transparent',
     alignItems: 'center',
   },
   stateContainer: {

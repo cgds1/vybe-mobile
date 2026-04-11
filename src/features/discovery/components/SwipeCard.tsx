@@ -180,6 +180,15 @@ function CardContent({ profile }: { profile: DiscoveryProfile }) {
             {profile.bio}
           </Text>
         ) : null}
+        {profile.interests && profile.interests.length > 0 ? (
+          <View style={styles.interestsRow}>
+            {profile.interests.slice(0, 4).map((interest) => (
+              <View key={interest} style={styles.interestChip}>
+                <Text style={styles.interestText}>{interest}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
         {profile.distance !== undefined ? (
           <Text style={styles.distanceText}>{profile.distance} km de distancia</Text>
         ) : null}
@@ -224,6 +233,23 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.text.secondary,
     lineHeight: fontSizes.sm * 1.55,
+  },
+  interestsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[1],
+    marginTop: spacing[1],
+  },
+  interestChip: {
+    paddingHorizontal: spacing[2],
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  interestText: {
+    fontFamily: fontFamilies.body.medium,
+    fontSize: fontSizes.xs,
+    color: colors.offWhite,
   },
   distanceText: {
     fontFamily: fontFamilies.body.medium,

@@ -9,6 +9,7 @@ import { getChatSocket } from '@/features/chat/socket/chatSocket';
 import type { Chat } from '@/features/chat/api/types';
 import { useChatStore } from '@/features/chat/store/chatStore';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { Background } from '@/shared/components/Background';
 import { colors, fontFamilies, fontSizes, radius, spacing } from '@/theme';
 
 function formatTime(iso?: string): string {
@@ -42,6 +43,7 @@ function ChatItem({ chat }: { chat: Chat }) {
         chatId: chat.id,
         name: chat.participantName,
         avatar: chat.participantAvatar ?? '',
+        participantId: chat.participantId,
       },
     });
   }
@@ -116,7 +118,13 @@ export default function ChatsScreen() {
     const socket = getChatSocket(accessToken);
 
     function onChatUpdated(data: { chatId: string; lastMessage: string; lastMessageAt: string }) {
-      updateChatLastMessage(data.chatId, data.lastMessage, data.lastMessageAt);
+      const exists = useChatStore.getState().activeChats.some((c) => c.id === data.chatId);
+      if (exists) {
+        updateChatLastMessage(data.chatId, data.lastMessage, data.lastMessageAt);
+      } else {
+        // Chat nuevo (primer mensaje de un match) — recargar lista completa
+        load();
+      }
     }
 
     // Nuevo match → recargar lista para que aparezca el chat
@@ -184,7 +192,7 @@ export default function ChatsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.midnight,
+    backgroundColor: 'transparent',
   },
   header: {
     paddingHorizontal: spacing[5],

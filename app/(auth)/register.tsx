@@ -67,6 +67,13 @@ function validatePassword(password: string): string | undefined {
   return undefined;
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────
+
+const INTEREST_PRESETS = [
+  'Música', 'Cine', 'Viajes', 'Deporte', 'Lectura',
+  'Arte', 'Gaming', 'Cocina', 'Tecnología', 'Yoga',
+];
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface FormState {
@@ -75,6 +82,7 @@ interface FormState {
   password: string;
   dob: string;
   bio: string;
+  interests: string[];
   avatarUri?: string | undefined;
 }
 
@@ -95,6 +103,7 @@ export default function RegisterScreen() {
     password: '',
     dob: '',
     bio: '',
+    interests: [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -123,6 +132,7 @@ export default function RegisterScreen() {
           displayName: form.name.trim(),
           age,
           bio: form.bio.trim() || undefined,
+          interests: form.interests.length > 0 ? form.interests : undefined,
         },
         authData.accessToken,
       );
@@ -144,6 +154,14 @@ export default function RegisterScreen() {
 
   const clearError = (key: keyof FormErrors) =>
     setErrors((e) => { const next = { ...e }; delete next[key]; return next; });
+
+  const toggleInterest = (interest: string) =>
+    setForm((f) => ({
+      ...f,
+      interests: f.interests.includes(interest)
+        ? f.interests.filter((i) => i !== interest)
+        : [...f.interests, interest],
+    }));
 
   const set = (key: keyof FormState) => (value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -337,6 +355,27 @@ export default function RegisterScreen() {
             style={styles.bioInput}
           />
 
+          {/* Intereses */}
+          <View style={styles.interestsSection}>
+            <Text style={styles.interestsLabel}>Intereses (opcional)</Text>
+            <View style={styles.chipsRow}>
+              {INTEREST_PRESETS.map((item) => {
+                const active = form.interests.includes(item);
+                return (
+                  <Pressable
+                    key={item}
+                    style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => toggleInterest(item)}
+                  >
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                      {item}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
           {apiError !== undefined && (
             <View style={styles.errorBanner}>
               <Text style={styles.errorBannerText}>{apiError}</Text>
@@ -358,7 +397,7 @@ export default function RegisterScreen() {
 const AVATAR_SIZE = 88;
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.midnight },
+  flex: { flex: 1, backgroundColor: 'transparent' },
 
   container: {
     flexGrow: 1,
@@ -440,6 +479,39 @@ const styles = StyleSheet.create({
     paddingTop: spacing[3],
   },
 
+  interestsSection: {
+    gap: spacing[3],
+  },
+  interestsLabel: {
+    fontFamily: fontFamilies.body.semiBold,
+    fontSize: fontSizes.sm,
+    color: colors.text.secondary,
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  chip: {
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border.strong,
+    backgroundColor: 'transparent',
+  },
+  chipActive: {
+    backgroundColor: colors.coral,
+    borderColor: colors.coral,
+  },
+  chipText: {
+    fontFamily: fontFamilies.body.medium,
+    fontSize: fontSizes.sm,
+    color: colors.text.secondary,
+  },
+  chipTextActive: {
+    color: colors.offWhite,
+  },
   errorBanner: {
     backgroundColor: `${colors.error}20`,
     borderWidth: 1,

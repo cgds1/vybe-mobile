@@ -26,7 +26,6 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { queryClient } from '@/services/api/queryClient';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { ToastProvider } from '@/shared/context/ToastContext';
-import { colors } from '@/theme';
 
 const bgImage = require('../assets/bg.jpg');
 
@@ -71,7 +70,12 @@ function RootNavigator() {
       const Notifications = await import('expo-notifications');
 
       // Manejar tap en notificación cuando la app está en background/cerrada
-      const bgSub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const bgSub = Notifications.addNotificationResponseReceivedListener(async (response) => {
+        // Descartar la notificación del centro de notificaciones al abrirla
+        await Notifications.dismissNotificationAsync(
+          response.notification.request.identifier,
+        );
+
         const data = response.notification.request.content.data as Record<string, unknown>;
         const type = data?.type as string | undefined;
         const chatId = data?.chatId as string | undefined;

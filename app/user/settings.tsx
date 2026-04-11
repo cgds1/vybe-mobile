@@ -7,12 +7,22 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useChatStore } from '@/features/chat/store/chatStore';
 import { disconnectChatSocket } from '@/features/chat/socket/chatSocket';
 import { Background } from '@/shared/components/Background';
+import { registerPushToken, unregisterPushToken } from '@/features/notifications/notifications';
 import { colors, fontFamilies, fontSizes, radius, spacing } from '@/theme';
 
 export default function SettingsScreen() {
   const { top } = useSafeAreaInsets();
   const logout = useAuthStore((s) => s.logout);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  async function handleNotificationsToggle(value: boolean) {
+    setNotificationsEnabled(value);
+    if (value) {
+      await registerPushToken();
+    } else {
+      await unregisterPushToken();
+    }
+  }
 
   function handleLogout() {
     disconnectChatSocket();
@@ -48,7 +58,7 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
+              onValueChange={handleNotificationsToggle}
               trackColor={{ false: colors.surface, true: colors.coral }}
               thumbColor={colors.offWhite}
             />

@@ -38,3 +38,12 @@ export async function registerPushToken(): Promise<string | null> {
 
   return token;
 }
+
+export async function unregisterPushToken(): Promise<void> {
+  if (Constants.appOwnership === 'expo') return;
+  try {
+    await apiClient.delete('/notifications/token');
+  } catch {
+    // no crítico
+  }
+}

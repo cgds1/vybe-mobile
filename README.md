@@ -45,8 +45,8 @@ npm install
 Crea un archivo `.env.development` en la raíz:
 
 ```env
-EXPO_PUBLIC_API_URL=https://vybe-backend-production-504d.up.railway.app
-EXPO_PUBLIC_WS_URL=https://vybe-backend-production-504d.up.railway.app
+EXPO_PUBLIC_API_URL=https://your-backend-url.railway.app
+EXPO_PUBLIC_WS_URL=https://your-backend-url.railway.app
 ```
 
 ## Desarrollo
@@ -60,6 +60,12 @@ npx expo start --clear
 ```bash
 eas build --profile preview --platform android
 ```
+
+## Demo
+
+Proyecto en Expo: [cgds1/vybe-mobile](https://expo.dev/accounts/cgds1/projects/vybe-mobile)
+
+APK (Android): [Descargar build de producción](https://expo.dev/accounts/cgds1/projects/vybe-mobile/builds/bd0cc748-3212-4d73-be61-323f4b91f73a)
 
 ## Contribuidores
 
